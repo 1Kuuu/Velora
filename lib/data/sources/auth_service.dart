@@ -24,12 +24,27 @@ class AuthService {
     required String username,
     required String email,
     required String password,
-    required String confirmPassword, // 👈 Added confirmPassword parameter
+    required String confirmPassword,
   }) async {
     try {
       // 🔹 Validate Password Match
       if (password != confirmPassword) {
         _showToast(context, "Passwords do not match!", Icons.error, Colors.red);
+        return false;
+      }
+
+      // Check if user already exists in Firestore with this email
+      final querySnapshot = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        _showToast(
+            context,
+            "An account with this email already exists. Please log in.",
+            Icons.error,
+            Colors.red);
         return false;
       }
 
@@ -42,19 +57,29 @@ class AuthService {
       if (userCredential.user != null) {
         User user = userCredential.user!;
 
+        // Send email verification for new users
+        await user.sendEmailVerification();
+
         // ✅ Update Firebase Auth profile
         await user.updateDisplayName(username);
         await user.reload(); // Refresh user info
 
-        // ✅ Save user info in Firestore (Unified Collection)
+        // ✅ Save user info in Firestore
         await _firestore.collection('users').doc(user.uid).set({
           'uid': user.uid,
           'userName': username,
           'email': email,
           'createdAt': FieldValue.serverTimestamp(),
-          'setupComplete':
-              false, // 👈 Ensure this is false for onboarding logic
+          'setupComplete': false,
+          'isNewUser': true // Flag to identify new users
         });
+
+        // Show verification email sent toast
+        _showToast(
+            context,
+            "Account created! Please verify your email to continue.",
+            Icons.mail,
+            Colors.green);
 
         return true;
       }
@@ -63,6 +88,16 @@ class AuthService {
       _showToast(context, "Signup failed: $e", Icons.error, Colors.red);
       return false;
     }
+  }
+
+  /// 🔹 Check Email Verification Status
+  Future<bool> isEmailVerified() async {
+    User? user = _auth.currentUser;
+    if (user != null) {
+      await user.reload();
+      return user.emailVerified;
+    }
+    return false;
   }
 
   /// 🔹 Log in with email & password
@@ -76,6 +111,30 @@ class AuthService {
         email: email,
         password: password,
       );
+
+      // Check if user exists in Firestore
+      DocumentSnapshot userDoc = await _firestore
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .get();
+
+      // If user exists in Firestore (old user), allow direct login
+      if (userDoc.exists) {
+        _showToast(
+            context, "Login Successful!", Icons.check_circle, Colors.green);
+        return userCredential;
+      }
+      // If new user (no Firestore data), require email verification
+      else if (!userCredential.user!.emailVerified) {
+        _showToast(
+            context,
+            "Please verify your email before logging in. Check your inbox.",
+            Icons.mail,
+            Colors.orange);
+        await userCredential.user!.sendEmailVerification();
+        await _auth.signOut();
+        return null;
+      }
 
       _showToast(
           context, "Login Successful!", Icons.check_circle, Colors.green);
