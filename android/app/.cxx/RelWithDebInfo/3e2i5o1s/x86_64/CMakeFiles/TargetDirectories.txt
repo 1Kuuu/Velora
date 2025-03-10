@@ -1,0 +1,2 @@
+C:/Users/Echo/velo/velo/android/app/.cxx/RelWithDebInfo/3e2i5o1s/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/Echo/velo/velo/android/app/.cxx/RelWithDebInfo/3e2i5o1s/x86_64/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,2 @@
+C:/GitHub/velo/android/app/.cxx/Debug/3d5n2d14/x86/CMakeFiles/edit_cache.dir
+C:/GitHub/velo/android/app/.cxx/Debug/3d5n2d14/x86/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,2 @@
+C:/Users/User/Desktop/velo/android/app/.cxx/Debug/1s451d16/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/User/Desktop/velo/android/app/.cxx/Debug/1s451d16/armeabi-v7a/CMakeFiles/rebuild_cache.dir

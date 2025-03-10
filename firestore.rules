@@ -1,0 +1,96 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 🔒 Secure user data: Allow all authenticated users to read user documents
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // 🔒 Secure user profiles
+    match /user_profile/{userId} {
+      // Allow all authenticated users to read profiles
+      allow read: if isSignedIn();
+      
+      // Allow users to create and update their own profile
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+
+      // 🔒 Secure viewed posts subcollection
+      match /viewed_posts/{postId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null && request.auth.uid == userId;
+        allow update: if request.auth != null && request.auth.uid == userId;
+        allow delete: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // 🔒 Secure user preferences
+    match /user_preferences/{userId} {
+      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // 🔒 Secure posts collection
+    match /posts/{postId} {
+      // Allow all authenticated users to read posts
+      allow read: if isSignedIn();
+
+      // Allow authenticated users to create posts
+      allow create: if isSignedIn() &&
+        request.resource.data.keys().hasAll(['content', 'userId', 'createdAt', 'likesCount', 'commentsCount']) &&
+        request.resource.data.userId == request.auth.uid;
+
+      // Allow only the author to update or delete their own post
+      allow update, delete: if isSignedIn() && request.auth.uid == resource.data.userId;
+
+      // 🔒 Secure comments inside posts
+      match /comments/{commentId} {
+        allow read: if isSignedIn();
+        
+        // Allow comment creation with proper fields
+        allow create: if isSignedIn() && 
+          request.resource.data.keys().hasAll(['text', 'userId', 'userName', 'userAvatar', 'timestamp']) &&
+          request.auth.uid == request.resource.data.userId;
+        
+        // Allow comment deletion for comment owner or post owner
+        allow delete: if isSignedIn() && (
+          request.auth.uid == resource.data.userId ||
+          request.auth.uid == get(/databases/$(database)/documents/posts/$(postId)).data.userId
+        );
+        
+        // Allow comment updates only by comment owner
+        allow update: if isSignedIn() && request.auth.uid == resource.data.userId;
+      }
+
+      // 🔒 Secure likes inside posts
+      match /likes/{userId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && userId == request.auth.uid;
+        allow delete: if isSignedIn() && userId == request.auth.uid;
+      }
+    }
+
+    // ✅ Allow authenticated users to access and create chats
+    match /chats/{chatId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // ✅ Allow authenticated users to send and read messages
+    match /chats/{chatId}/messages/{messageId} {
+      allow read, write: if isSignedIn();
+    }
+  }
+}

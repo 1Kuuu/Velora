@@ -1,0 +1,29 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "velo-5ae83",
+          "appId": "1:144243140512:android:c3286abeb2f279012366c5",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "velo-5ae83",
+          "configurations": {
+            "android": "1:144243140512:android:c3286abeb2f279012366c5",
+            "ios": "1:144243140512:ios:0c9bb41c6ac0a73f2366c5",
+            "macos": "1:144243140512:ios:0c9bb41c6ac0a73f2366c5",
+            "web": "1:144243140512:web:a556c13a3fb595592366c5",
+            "windows": "1:144243140512:web:8e21f8bd6dd24c292366c5"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}
